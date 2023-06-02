@@ -13,3 +13,5 @@ bin-int/
 !vendor/bin
 
 build/
+
+.cache/
