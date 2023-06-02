@@ -1,4 +1,4 @@
-# Walnut
+# Walnut(macOS)
 
 Walnut is a simple application framework built with Dear ImGui and designed to be used with Vulkan - basically this means you can seemlessly blend real-time Vulkan rendering with a great UI library to build desktop applications. The plan is to expand Walnut to include common utilities to make immediate-mode desktop apps and simple Vulkan applications.
 
@@ -22,7 +22,12 @@ Once you've cloned, run `scripts/Setup.bat` to generate Visual Studio 2022 solut
 sudo sh build.sh # run this if you enter this repo first time
 sh install.sh
 ```
-Also supports building the RayTracing series by The Cherno
+
+### Also supports building the RayTracing series by The Cherno
+![RayTracingExample](https://github.com/ye-junzhe/Images/blob/main/RayTracing/Sphere.png)
+WARNING:\
+The Walnut window management isn't working properly, sometimes the window just disappears and needs to rerun the executable\
+And there's a problem which makes the window too small, but all works OK after stretching
 ```
 git checkout raytracing
 sudo sh build.sh # run this if you enter this repo first time
