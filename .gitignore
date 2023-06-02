@@ -15,3 +15,7 @@ bin-int/
 build/
 
 .cache/
+
+.vscode/
+
+vendor/
