@@ -28,11 +28,6 @@ void Renderer::Render() {
             m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
         }
     }
-    // for (uint32_t x = 0; x < m_ViewportWidth; x++){
-    // 	for(uint32_t y = 0; y < m_ViewportHeight; y++){
-    // 		m_ImageData[x*y] = 0x00ff0000 * ((x+1)/(m_ViewportWidth+1));
-    // 	}
-    // }
     m_FinalImage->SetData(m_ImageData);
 }
 
@@ -51,9 +46,10 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 
 glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 {
-	glm::vec3 rayOrigin(0.0f, 0.0f, 2.0f);
+	glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
 	glm::vec3 rayDirection(coord.x, coord.y, -1.0f);
 	float radius = 0.5f;
+    glm::vec3 sphereColor(1, 0 ,1);
 	// rayDirection = glm::normalize(rayDirection);
 
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
@@ -71,7 +67,19 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	// b^2 - 4ac
 
 	float discriminant = b * b - 4.0f * a * c;
-	if (discriminant >= 0.0f)
-		return glm::vec4(1, 0, 0, 1);
-	return glm::vec4(1, 1, 1, 1);
+    if (discriminant < 0.0f) {
+        return glm::vec4(0, 0, 0, 1);
+    }
+
+    float closerX = ((-b - glm::sqrt(discriminant)) / (2.0f * a));
+    float fartherX = ((-b + glm::sqrt(discriminant)) / (2.0f * a));
+    glm::vec3 closerY = rayOrigin + rayDirection * closerX;
+    glm::vec3 fartherY = rayOrigin + rayDirection * fartherX;
+
+    glm::vec3 normal = glm::normalize(closerY);
+    glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+    float d = glm::max(glm::dot(normal, -lightDir), 0.0f);
+
+    sphereColor *= d;
+    return glm::vec4(sphereColor, 1);
 }
