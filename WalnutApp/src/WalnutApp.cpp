@@ -12,10 +12,10 @@ public:
     virtual void OnUIRender() override {
         ImGui::Begin("Settings");
         ImGui::Text("Last render: %.3fms", m_LastRenderTime);
+
         if (ImGui::Button("Render"))
         {
-            m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
-            m_Renderer.Render();
+            Render();
         }
         ImGui::End();
 
@@ -33,20 +33,20 @@ public:
         ImGui::End();
         ImGui::PopStyleVar();
 
-        m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
-        m_Renderer.Render();
+        Render();
     }
 
-    // void Render() {
-    //     Timer timer;
-    //     m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
-    //     m_Renderer.Render();
-    //     m_LastRenderTime = timer.ElapsedMillis();
-    // }
+	void Render() {
+		Timer timer;
+        m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
+        m_Renderer.Render(1.5f);
+
+		m_LastRenderTime = timer.ElapsedMillis();
+	}
+
 private:
     Renderer m_Renderer;
     uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
-
     float m_LastRenderTime = 0.0f;
 };
 

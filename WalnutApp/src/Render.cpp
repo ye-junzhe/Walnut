@@ -1,5 +1,4 @@
 #include "Render.h"
-#include "Walnut/Random.h"
 
 namespace Utils {
 
@@ -14,16 +13,20 @@ namespace Utils {
     }
 }
 
-void Renderer::Render() {
-
+void Renderer::Render(float SSAA_level) {
     float aspectRatio = float(m_FinalImage->GetWidth()) / float(m_FinalImage->GetHeight());
 
     for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
         for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
+            glm::vec4 color = glm::vec4(0.0f);
             glm::vec2 coord = { (float)x / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight()};
             coord = coord * 2.0f - 1.0f;
-            coord.x *= aspectRatio;
-            glm::vec4 color = PerPixel(coord);
+            if (SSAA_level > 0) {
+                color = Renderer::SSAA(coord, aspectRatio, SSAA_level);
+            } else {
+                coord.x *= aspectRatio;
+                color = PerPixel(coord);
+            }
             color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
             m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
         }
@@ -44,8 +47,26 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
     m_ImageData = new uint32_t[width * height];
 }
 
+glm::vec4 Renderer::SSAA(glm::vec2 coord, float aspectRatio, float level) {
+    float stride = 1.0f / level;
+    glm::vec4 color = glm::vec4(0.0f);
+
+    for (float i = -stride; i <= stride; i += stride) {
+        for (float j = -stride; j <= stride; j += stride) {
+            glm::vec2 subCoord = coord + glm::vec2(i, j) / glm::vec2(m_FinalImage->GetWidth(), m_FinalImage->GetHeight());
+            subCoord.x *= aspectRatio;
+            glm::vec4 subColor = PerPixel(subCoord);
+            color += subColor;
+        }
+    }
+
+    color /= std::pow(2 * level, 2);
+    return color;
+}
+
 glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 {
+    // WARNING: Negative is farther
 	glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
 	glm::vec3 rayDirection(coord.x, coord.y, -1.0f);
 	float radius = 0.5f;
@@ -62,24 +83,23 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	float a = glm::dot(rayDirection, rayDirection);
 	float b = 2.0f * glm::dot(rayOrigin, rayDirection);
 	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
-
-	// Quadratic forumula discriminant:
-	// b^2 - 4ac
-
 	float discriminant = b * b - 4.0f * a * c;
     if (discriminant < 0.0f) {
         return glm::vec4(0, 0, 0, 1);
     }
 
-    float closerX = ((-b - glm::sqrt(discriminant)) / (2.0f * a));
-    float fartherX = ((-b + glm::sqrt(discriminant)) / (2.0f * a));
-    glm::vec3 closerY = rayOrigin + rayDirection * closerX;
-    glm::vec3 fartherY = rayOrigin + rayDirection * fartherX;
+    float closerT = ((-b - glm::sqrt(discriminant)) / (2.0f * a));
+    float fartherT = ((-b + glm::sqrt(discriminant)) / (2.0f * a));
+    glm::vec3 closerPoint = rayOrigin + rayDirection * closerT;
+    glm::vec3 fartherPoint = rayOrigin + rayDirection * fartherT;
 
-    glm::vec3 normal = glm::normalize(closerY);
+    glm::vec3 normal = glm::normalize(closerPoint);
     glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-    float d = glm::max(glm::dot(normal, -lightDir), 0.0f);
+    // how strong the light will be
+    // if cos value < 0, which means the angle between the normal and the -lightdir is too big
+    // therefor causing the lightness to be very low
+    float lightStrongness = glm::max(glm::dot(normal, -lightDir), 0.0f);
+    sphereColor *= lightStrongness;
 
-    sphereColor *= d;
     return glm::vec4(sphereColor, 1);
 }
