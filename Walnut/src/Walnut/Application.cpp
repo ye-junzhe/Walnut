@@ -142,6 +142,15 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
 		{
 			VkPhysicalDeviceProperties properties;
 			vkGetPhysicalDeviceProperties(gpus[i], &properties);
+			VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+
+			if (counts & VK_SAMPLE_COUNT_64_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_64_BIT; }
+			if (counts & VK_SAMPLE_COUNT_32_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_32_BIT; }
+			if (counts & VK_SAMPLE_COUNT_16_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_16_BIT; }
+			if (counts & VK_SAMPLE_COUNT_8_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_8_BIT; }
+			if (counts & VK_SAMPLE_COUNT_4_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_4_BIT; }
+			if (counts & VK_SAMPLE_COUNT_2_BIT) { s_Instance->m_MSAASampleCount = VK_SAMPLE_COUNT_2_BIT; }
+
 			if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
 				use_gpu = i;

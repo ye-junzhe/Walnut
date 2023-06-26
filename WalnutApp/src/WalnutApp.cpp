@@ -4,6 +4,7 @@
 #include "Walnut/Timer.h"
 
 #include "Render.h"
+#include <cstdio>
 
 using namespace Walnut;
 
@@ -67,5 +68,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv) {
                             ImGui::EndMenu();
                             }
                             });
+    std::cout << "Max MSAA Sample Count: " << app->m_MSAASampleCount << std::endl;
     return app;
 }

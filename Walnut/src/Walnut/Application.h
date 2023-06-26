@@ -56,6 +56,7 @@ namespace Walnut {
 		static void FlushCommandBuffer(VkCommandBuffer commandBuffer);
 
 		static void SubmitResourceFree(std::function<void()>&& func);
+        VkSampleCountFlagBits m_MSAASampleCount;
 	private:
 		void Init();
 		void Shutdown();
