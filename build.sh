@@ -49,7 +49,7 @@ cmake -S . -B build
 check_success "CMake configuration"
 
 # Build project
-cd build
+cd build || exit
 make
 check_success "Build"
 
