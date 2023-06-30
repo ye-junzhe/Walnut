@@ -4,6 +4,7 @@
 #include "Walnut/Timer.h"
 
 #include "Render.h"
+#include "imgui.h"
 #include <cstdio>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -45,6 +46,10 @@ public:
         ImGui::End();
 
         ImGui::Begin("Scene");
+
+        ImGui::DragFloat3("Light", glm::value_ptr(m_Scene.lightDir), 0.01f);
+        ImGui::Separator();
+
         for (size_t i = 0; i < m_Scene.Spheres.size(); i++) {
             ImGui::PushID(i);
             Sphere& sphere = m_Scene.Spheres[i];

@@ -13,4 +13,5 @@ struct Sphere {
 
 struct Scene {
     std::vector<Sphere> Spheres;
+    glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 };

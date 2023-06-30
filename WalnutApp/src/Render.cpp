@@ -124,7 +124,7 @@ glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
     glm::vec3 normal = glm::normalize(hitPoint);
 
     // The direction of the light
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+    glm::vec3 lightDir = scene.lightDir;
     // how strong the light will be
     // if cos value < 0, which means the angle between the normal and the -lightdir is too big
     // therefor causing the lightness to be very low
