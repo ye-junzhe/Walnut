@@ -13,26 +13,57 @@ namespace Utils {
     }
 }
 
-void Renderer::Render(float SSAA_level) {
-    float aspectRatio = float(m_FinalImage->GetWidth()) / float(m_FinalImage->GetHeight());
+void Renderer::Render(const Camera& camera) {
+
+    Ray ray;
+    ray.Origin = camera.GetPosition();
 
     for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
         for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
-            glm::vec4 color = glm::vec4(0.0f);
-            glm::vec2 coord = { (float)x / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight()};
-            coord = coord * 2.0f - 1.0f;
-            if (SSAA_level > 0) {
-                color = Renderer::SSAA(coord, aspectRatio, SSAA_level);
-            } else {
-                coord.x *= aspectRatio;
-                color = PerPixel(coord);
-            }
+            ray.Direction = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth()];
+            glm::vec4 color = TraceRay(ray);
             color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
             m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
         }
     }
     m_FinalImage->SetData(m_ImageData);
 }
+
+void Renderer::RenderSSAA(float SSAA_level, const Camera& camera) {
+    uint32_t width = m_FinalImage->GetWidth();
+    uint32_t height = m_FinalImage->GetHeight();
+    uint32_t newWidth = width * SSAA_level;
+    uint32_t newHeight = height * SSAA_level;
+    float invSSAA_level = 1.0f / SSAA_level;
+
+    Ray ray;
+    ray.Origin = camera.GetPosition();
+
+    for (uint32_t y = 0; y < newHeight; y++) {
+        for (uint32_t x = 0; x < newWidth; x++) {
+            uint32_t sampleCount = 0;
+            glm::vec4 color(0.0f);
+
+            // Generate multiple rays per pixel
+            for (float subY = 0; subY < SSAA_level; subY += 1.0f) {
+                for (float subX = 0; subX < SSAA_level; subX += 1.0f) {
+                    float sampleX = (x + subX) * invSSAA_level;
+                    float sampleY = (y + subY) * invSSAA_level;
+                    ray.Direction = camera.GetRayDirections()[(uint32_t)sampleX + (uint32_t)sampleY * width];
+                    color += TraceRay(ray);
+                    sampleCount++;
+                }
+            }
+
+            color /= sampleCount;
+            color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
+            m_ImageData[x + y * newWidth] = Utils::ConvertToRGBA(color);
+        }
+    }
+    m_FinalImage->Resize(newWidth, newHeight);
+    m_FinalImage->SetData(m_ImageData);
+}
+
 
 void Renderer::OnResize(uint32_t width, uint32_t height) {
     if (m_FinalImage) {
@@ -47,28 +78,10 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
     m_ImageData = new uint32_t[width * height];
 }
 
-glm::vec4 Renderer::SSAA(glm::vec2 coord, float aspectRatio, float level) {
-    float stride = 1.0f / level;
-    glm::vec4 color = glm::vec4(0.0f);
 
-    for (float i = -stride; i <= stride; i += stride) {
-        for (float j = -stride; j <= stride; j += stride) {
-            glm::vec2 subCoord = coord + glm::vec2(i, j) / glm::vec2(m_FinalImage->GetWidth(), m_FinalImage->GetHeight());
-            subCoord.x *= aspectRatio;
-            glm::vec4 subColor = PerPixel(subCoord);
-            color += subColor;
-        }
-    }
-
-    color /= std::pow(2 * level, 2);
-    return color;
-}
-
-glm::vec4 Renderer::PerPixel(glm::vec2 coord)
+// WARNING: Negative is farther
+glm::vec4 Renderer::TraceRay(const Ray& ray)
 {
-    // WARNING: Negative is farther
-	glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
-	glm::vec3 rayDirection(coord.x, coord.y, -1.0f);
 	float radius = 0.5f;
     glm::vec3 sphereColor(1, 0 ,1);
 	// rayDirection = glm::normalize(rayDirection);
@@ -80,9 +93,9 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	// r = radius
 	// t = hit distance
 
-	float a = glm::dot(rayDirection, rayDirection);
-	float b = 2.0f * glm::dot(rayOrigin, rayDirection);
-	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
+	float a = glm::dot(ray.Direction, ray.Direction);
+	float b = 2.0f * glm::dot(ray.Origin, ray.Direction);
+	float c = glm::dot(ray.Origin, ray.Origin) - radius * radius;
 	float discriminant = b * b - 4.0f * a * c;
     if (discriminant < 0.0f) {
         return glm::vec4(0, 0, 0, 1);
@@ -90,8 +103,8 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 
     float closerT = ((-b - glm::sqrt(discriminant)) / (2.0f * a));
     float fartherT = ((-b + glm::sqrt(discriminant)) / (2.0f * a));
-    glm::vec3 closerPoint = rayOrigin + rayDirection * closerT;
-    glm::vec3 fartherPoint = rayOrigin + rayDirection * fartherT;
+    glm::vec3 closerPoint = ray.Origin + ray.Direction * closerT;
+    glm::vec3 fartherPoint = ray.Origin + ray.Direction * fartherT;
 
     glm::vec3 normal = glm::normalize(closerPoint);
     glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));

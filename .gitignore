@@ -19,3 +19,5 @@ build/
 .vscode/
 
 vendor/
+
+ninja-build/
