@@ -30,40 +30,37 @@ void Renderer::Render(const Camera& camera) {
 }
 
 void Renderer::RenderSSAA(float SSAA_level, const Camera& camera) {
-    uint32_t width = m_FinalImage->GetWidth();
-    uint32_t height = m_FinalImage->GetHeight();
-    uint32_t newWidth = width * SSAA_level;
-    uint32_t newHeight = height * SSAA_level;
-    float invSSAA_level = 1.0f / SSAA_level;
-
     Ray ray;
     ray.Origin = camera.GetPosition();
 
-    for (uint32_t y = 0; y < newHeight; y++) {
-        for (uint32_t x = 0; x < newWidth; x++) {
+    for (uint32_t y = 0; y < m_FinalImage->GetWidth() * SSAA_level; y++) {
+        for (uint32_t x = 0; x < m_FinalImage->GetHeight() * SSAA_level; x++) {
             uint32_t sampleCount = 0;
             glm::vec4 color(0.0f);
 
             // Generate multiple rays per pixel
-            for (float subY = 0; subY < SSAA_level; subY += 1.0f) {
-                for (float subX = 0; subX < SSAA_level; subX += 1.0f) {
-                    float sampleX = (x + subX) * invSSAA_level;
-                    float sampleY = (y + subY) * invSSAA_level;
-                    ray.Direction = camera.GetRayDirections()[(uint32_t)sampleX + (uint32_t)sampleY * width];
-                    color += TraceRay(ray);
-                    sampleCount++;
+            for (uint32_t subY = -SSAA_level; subY <= SSAA_level; subY += SSAA_level) {
+                for (uint32_t subX = -SSAA_level; subX <= SSAA_level; subX += SSAA_level) {
+                    uint32_t sampleX = (x + subX);
+                    uint32_t sampleY = (y + subY);
+
+                    if (sampleX >= 0 && sampleX < (m_FinalImage->GetWidth()) &&
+                        sampleY >= 0 && sampleY < (m_FinalImage->GetHeight())) {
+                        ray.Direction = camera.GetRayDirections()[sampleX + sampleY * m_FinalImage->GetWidth()];
+                        color += TraceRay(ray);
+                        sampleCount++;
+                    }
                 }
             }
 
             color /= sampleCount;
             color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
-            m_ImageData[x + y * newWidth] = Utils::ConvertToRGBA(color);
+            m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
         }
     }
-    m_FinalImage->Resize(newWidth, newHeight);
+    m_FinalImage->Resize(m_FinalImage->GetWidth(), m_FinalImage->GetHeight());
     m_FinalImage->SetData(m_ImageData);
 }
-
 
 void Renderer::OnResize(uint32_t width, uint32_t height) {
     if (m_FinalImage) {
