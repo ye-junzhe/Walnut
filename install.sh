@@ -30,11 +30,11 @@ else
     echo "Building only WalnutApp"
 
     if [[ $build_system == "Ninja" ]]; then
-        cmake --build ./ninja-build --target WalnutApp -- -G"$build_system"
+        cmake --build ./ninja-build --target WalnutApp
         cd ninja-build || exit
         ninja
     else
-        cmake --build ./build --target WalnutApp -- -G"$build_system"
+        cmake --build ./build --target WalnutApp
         cd build || exit
         make
     fi
