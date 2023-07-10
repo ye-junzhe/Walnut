@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Ray.h"
 #include "Walnut/Image.h"
+#include "Walnut/Random.h"
 #include "Scene.h"
 
 #include <memory>
